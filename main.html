@@ -1,36 +1,87 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <!--
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
     <script type="text/javascript" src="//code.jquery.com/jquery-2.1.3.min.js"></script>
-    <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>-->
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
 
     <style type="text/css">
-      html, body, #map-canvas { height: 100%; margin: 0; padding: 0;}
+      html, body, #map-canvas {height: 100%; margin: 0; padding: 0; font-weight: 300;}
+      select {width:100%;}
+      input[type="text"] {background-color:white;}
+      .panel {position:absolute;z-index:1;top:20px;left:100px;width:400px;/*height:300px;*/font-family:"Roboto";background-color:transparent;}
+      .panel-resto {margin-top:5px;}
+      .panel-resto h6 {margin:0 !important;}
+      .search-bar {position:relative;}
+      .dropdown-menu {width:100%;}
+      .dropdown-menu a h6 {margin-bottom:0;font-size:1.1em;}
+      .dropdown-menu a span {color:#AAA;font-weight:300;font-size:12px;}
+      h4 {font-weight:normal;}
+      label {font-size:12px;}
+      .text-center {text-align:center;}
+      .reset-map {position:absolute;top:0;right:-100px;}
+      .draw-circle {position:absolute;top:0;right:-205px;}
+      .place-address-wrap {width:260px;}
+      .place-details {background-color:white;padding:10px;margin:5px 0 0;display:none;border:1px dotted #AAA;}
+      .place-details .formatted-address span {display:block;}
+      .right-pane {margin-top:10px;}
+      .small-text {font-size:10px;}
+      .directions-container {background:white;padding:10px;margin-top:5px;display:none;}
+      .cards-vertical-divider {
+        background: linear-gradient(top,#fbfbfb,#e2e2e2,#fbfbfb);
+        background: -o-linear-gradient(top,#fbfbfb,#e2e2e2,#fbfbfb);
+        background: -ms-linear-gradient(top,#fbfbfb,#e2e2e2,#fbfbfb);
+        background: -moz-linear-gradient(top,#fbfbfb,#e2e2e2,#fbfbfb);
+        background: -webkit-linear-gradient(top,#FBFBFB,#E2E2E2,#FBFBFB);
+        width: 1px;
+        min-width: 1px;
+        display: table-cell;
+        vertical-align: top;
+        height: 43px;
+      }
+      .stats-container {/*position:absolute;*/margin-top:5px;background-color:white;padding:10px;width:400px;font-family:"Roboto";border:1px dotted #AAA;font-size:12px;display:none;}
+      .stats-container h3, .circle-container h3 {font-weight:300;font-family:"Roboto";font-weight:300px;margin-top:0px;font-size:30px;}
+      .stats-container > div:first-child {width:200px;}
+      .stats-container > div:last-child {width:150px;}
+      .stats-container ul {list-style:none;padding:0;list-style-position:inside;list-style-type:decimal;margin-top:10px;}
+      .circle-container {/*position:absolute;*/margin-top:5px;background-color:white;padding:10px;width:400px;font-family:"Roboto";border:1px dotted #AAA;font-size:12px;display:none;}
+      .alert-dismissible {margin-top:5px;}
+      .checkbox {margin:0 !important;}
+      .badge {font-weight:normal !important;}
     </style>
     <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDiDO7ZZzrtmb5d4xDByyo4I5hvesQG8CY&libraries=places"></script>
+    <script type="text/javascript" src="places.js"></script>
     <script type="text/javascript">
-
-      var placeIDs = [
-        'ChIJ41bI-D6ZqTMRbdF4kulLW7s',
-        'ChIJq9Asiz6ZqTMRfXN_5KPnlnw',
-        'ChIJR6nEAT-ZqTMRViQP6DPzA7g',
-        'ChIJn2IM-z6ZqTMRT63E31n9nOc',
-        'ChIJpQnCjz6ZqTMRrqxW1OjnRYc',
-        'ChIJwdAejT6ZqTMR2thM050cw2o',
-        'ChIJIyJjwD6ZqTMR-N2uXx482mE',
-        'ChIJn2IM-z6ZqTMRzFNU5tWvaOY'
-      ];
-
+      console.log(restaurant_list.length);
 
       var map;
       var service;
-      
+      var circle;
+      var directionsService = new google.maps.DirectionsService();
+      var directionsDisplay = new google.maps.DirectionsRenderer();
+      var markers = [];
+      var rTypes = [1, 2, 3, 4, 5];
+      var current_search_results = [];
+      var MAX_ADDRESS_LENGTH = 60;
+      var MAX_SEARCH_RESULT_DISPLAY = 10;
+      var MAX_ALLOWED_ADDRESS_LENGTH_PER_LINE = 20;
+
+      // direction place object
+      var destination_place_object;
+      var starting_place_object;
+
+      var dropdown_loader = "<li role='presentation'><a class='text-center' role='menuitem' tabindex='-1' href='javascript:void(0)'><img src='loader_big.gif'></a></li>";
+      var dropdown_zero_results = "<li role='presentation'><span class='center-block text-center' role='menuitem' tabindex='-1'><span class='glyphicon glyphicon-warning-sign' aria-hidden='true'></span> No results.</li>";
+
       function initialize() {
-        
         var mapOptions = {
-          center: { lat: 10.319241, lng: 123.90514800000005},
-          zoom: 18
+          center: { lat: 10.3139237, lng: 123.8905048},
+          zoom: 14
         };
 
         map = new google.maps.Map(
@@ -40,100 +91,601 @@
 
         service = new google.maps.places.PlacesService(map);
 
-        google.maps.event.addListenerOnce(map, 'bounds_changed', getDetails);
+        // after map is initialized;
+        google.maps.event.addListenerOnce(map, 'bounds_changed', addMarkersOfRestaurantsOnTheMap);
       }
 
-      // --- PERFORM SEARCH
+      function addMarkersOfRestaurantsOnTheMap() {
+        for (var i = 0; i < restaurant_list.length; i++) {
+          // console.log(rTypes);
+          if ( rTypes.indexOf( restaurant_list[i].type ) >= 0 ) {
+            setMarkerWithPlaceObjectAtIndex(restaurant_list[i], i);
+          }
 
-      function performSearch() {
+        };
+      }
+
+      // @depreciated
+      function getPlaceDetailAtIndex(index) {
         var request = {
-          bounds: map.getBounds(),
-          keyword: "Sbarro - Ayala Center Cebu"
-        };
-        service.radarSearch(request, callback);
-      }
-
-      function callback(results, status) {
-        console.log(status);
-        console.log(results);
-
-        // Flame It! Burger - ChIJ41bI-D6ZqTMRbdF4kulLW7s
-        // Starbucks - ChIJq9Asiz6ZqTMRfXN_5KPnlnw
-        // Harbour City Dimsum House - ChIJR6nEAT-ZqTMRViQP6DPzA7g
-        // Gustavian - ChIJn2IM-z6ZqTMRT63E31n9nOc
-        // Kaona Grill - ChIJpQnCjz6ZqTMRrqxW1OjnRYc
-        // Bigby's Cafe - ChIJD2Zuqz-ZqTMRQpYfx0kp3Ik
-        // Tater's Enterprises Incorporated - ChIJIyJjwD6ZqTMR-N2uXx482mE
-        // Sbarro - Ayala Center Cebu - ChIJn2IM-z6ZqTMRzFNU5tWvaOY
-
-        for (var i = 0, result; result = results[i]; i++) {
-          service.getDetails(result, function(result, status) {
-            console.log(result);
-          });
-        }
-      }
-
-      // --- end PERFORM SEARCH
-
-
-
-      // --- SET MARKS
-
-      function getDetails() {
-        var request;
-
-        for (var i = 0; i < placeIDs.length; i++) {
-          request = {
-            placeId: placeIDs[i]
-          };
-
-          service.getDetails(request, function(result, status) {
-            setMarker(result);
-          });
-        };
-      }
-
-      function setMarker(place) {
-        var image = {
-          url: place.icon,
-          scaledSize: new google.maps.Size(18, 18)
+          placeId: placeIDs[index]
         };
 
-        new google.maps.Marker({
+        service.getDetails(request, function(result, status) {
+          setMarkerWithPlaceObjectAtIndex(result, index);
+        });
+      }
+
+      // @depreciated
+      function getPlaceDetailsWithPlaceId(request) {
+        service.getDetails(request, function(result, status) {
+          // console.log(result);
+        });
+      }
+
+      // @NOTE needs refactoring
+      function setMarkerWithPlaceObjectAtIndex(place, index) {
+        // console.log(place);
+        var marker = new google.maps.Marker({
+          position: place.location,
+          map: map,
+          title: place.name
+        });
+
+        marker.setAnimation(google.maps.Animation.BOUNCE);
+        setTimeout(function () { marker.setAnimation(null); }, 190);
+
+        // -------
+
+        markers.push(marker);
+
+        google.maps.event.addListener(marker, 'click', function() {
+          map.setZoom(18);
+          map.setCenter(marker.getPosition());
+          // console.log(json.items[index]);
+
+          console.log( restaurant_list[index] );
+
+          var patron_jobs_html = '';
+
+          $('.stats-container .avg-earnings h3').html( getRandomInt(100, 10000).toLocaleString() );
+          $('.stats-container .avg-patrons h3').html( getRandomInt(1, 100) );
+
+          // for (var i = 0; i < json.items[index].top_five_patron_jobs.length; i++) {
+          //   patron_jobs_html += "<li>" + json.items[index].top_five_patron_jobs[i] + "</li>";
+          // };
+
+          // $('.stats-container .jobs-patrons ul').html(patron_jobs_html);
+
+          $('.stats-container').show();
+
+          getDetailsByPlaceID( restaurant_list[index].place_id );
+        });
+      }
+
+      function setMarkerWithPlaceObject(place) {
+        var marker = new google.maps.Marker({
           position: place.geometry.location,
           map: map,
           title: place.name
         });
-      }
 
-      // --- end SET MARKS
+        marker.setAnimation(google.maps.Animation.BOUNCE);
+        setTimeout(function () { marker.setAnimation(null); }, 190);
 
+        // -------
 
+        markers.push(marker);
 
-      // --- SEARCH NEARBY
-
-      function searchNearby() {
-        var request = {
-          location: new google.maps.LatLng(10.319241, 123.90514800000005),
-          radius: 1000,
-          types: ['restaurant', 'food', 'coffee', 'bar']
-        };
-
-        service.nearbySearch(request, function(results, status, pagination) {
-          console.log(results);
-          for (var i = 0, result; result = results[i]; i++) {
-            setMarker(result);
-          }
+        google.maps.event.addListener(marker, 'click', function() {
+          map.setZoom(18);
+          map.setCenter(marker.getPosition());
         });
       }
 
-      // --- end SEARCH NEARBY
-      
-
       google.maps.event.addDomListener(window, 'load', initialize);
+
+      // --- utility methods
+
+      // search a restaurant nearby within 500 radius;
+      function performSearch(search_query_string) {
+        var request = {
+          location: new google.maps.LatLng(10.3139237, 123.8905048),
+          radius: '1000',
+          query: search_query_string,
+          types: ['restaurant']
+        };
+
+        service.textSearch(request, callback);
+      }
+
+      function callback(results, status) {
+        if (status == google.maps.places.PlacesServiceStatus.OK) {
+          var search_list = buildSearchResultList(results);
+          $('.dropdown-menu').html(search_list).show();
+        } else {
+          $('.dropdown-menu').html(dropdown_zero_results).show();          
+        }
+
+        // console.log(status);
+      }
+
+      function buildSearchResultList(results) {
+        var search_list = "";
+        var matches_count = 0;
+
+        // empty the current_search_results array first;
+        current_search_results = [];
+
+        console.log(results);
+
+        for (var i = 0; i < results.length; i++) {
+          if ((i + 1) > MAX_SEARCH_RESULT_DISPLAY) { break; }
+
+          var place = results[i];
+          search_list += buildSearchRowHtml(place, i);
+          current_search_results.push(place); 
+        }
+
+        return search_list;
+      }
+
+      function buildSearchRowHtml(place, index) {
+        var formatted_address = place.formatted_address;
+        var address = (formatted_address.length >= MAX_ADDRESS_LENGTH ? formatted_address.substr(0, MAX_ADDRESS_LENGTH).trim() + '...' : formatted_address );
+
+        return "\
+          <li role='presentation'>\
+            <a role='menuitem' tabindex='-1' href='#' data-index= " + index + ">\
+              <h6>" +  place.name + "</h6>\
+              <span>" + address + "</span>\
+            </a>\
+          </li>";
+      }
+
+      function buildFormattedAddressHtml(raw_address) {
+        var place_address = raw_address.split(",");
+        var prev_item_length = 0;
+        var html = "<span>";
+
+        for (var i in place_address) {
+          if (i) {
+            var address = place_address[i].trim();
+
+            if (prev_item_length + address.length > MAX_ALLOWED_ADDRESS_LENGTH_PER_LINE) {
+              if (i > 0) {
+                html += ",</span><span>" + address;                
+              } else {
+                html += address;
+              }              
+              prev_item_length = address.length;
+            } else {
+              html += ((i > 0) ? ", " : "") + address;
+              prev_item_length += address.length;
+            }  
+          }
+        }
+
+        return html;
+      }
+
+      function clearMarkers() {
+        for (var i = 0; i < markers.length; i++) {
+          markers[i].setMap(null);
+        }
+      }
+
+      function resetUI() {
+        // (1) clear search bar
+        $(".search-bar input[type='text']").val('').focus();
+
+        // (2) place-details is hidden
+        $('.place-details').hide();
+
+        // (3) directions-container is hidden
+        $('.directions-container').hide();
+
+        // (4) reset directions input value
+        $('.direction-destination').val('');
+        $('.direction-starting').val('');
+
+        // (5) stats container is hidden
+        $('.stats-container').hide();
+      }
+
+      function drawCircles() {
+        var options = {
+          strokeColor: '#FF0000',
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          fillColor: '#FF0000',
+          fillOpacity: 0.35,
+          map: map,
+          center: new google.maps.LatLng(10.31279, 123.913),
+          radius: 3000,
+          editable: true
+        };
+
+        // Add the circle for this city to the map.
+        circle = new google.maps.Circle(options);
+
+        // Add an event listener on the rectangle.
+        google.maps.event.addListener(circle, 'bounds_changed', circleBoundChanged);
+      }
+
+      function circleBoundChanged() {
+        var bounds = circle.getBounds();
+        var in_bounds = 0;
+        var revenue_total = 0;
+
+        for (var i = 0; i < restaurant_list.length; i++) {
+          if ( rTypes.indexOf( restaurant_list[i].type ) >= 0 && bounds.contains( restaurant_list[i].location ) ) {
+            in_bounds++;
+            revenue_total += restaurant_list[i].revenue_total;
+          }
+        };
+
+        updateCircleContainer(in_bounds, revenue_total);
+      }
+
+      function updateCircleContainer(resto_count, revenue_total) {
+        $('.circle-container .num-restaurants h3').html(resto_count);
+        $('.circle-container .revenue-total h3').html(revenue_total.toLocaleString());        
+
+        $('.circle-container').show();
+      }
+
+      // Returns a random integer between min (included) and max (excluded)
+      // Using Math.round() will give you a non-uniform distribution!
+      function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min)) + min;
+      }
+
+      function getDetailsByPlaceID(place_id) {
+        var request = {
+          placeId: place_id
+        };
+
+        service.getDetails(request, function(result, status) {
+          var formatted_address =  buildFormattedAddressHtml(result.formatted_address);
+          $('.place-details h4').html(result.name);
+          $('.formatted-address').html(formatted_address);
+          $('.place-details').show();
+          destination_place_object = result;
+        });
+      }
+
+      function isRestoTypeChecked(type) {
+
+      }
+
+      /**
+       * --- event handling ---
+       */
+
+      // bind all events after dom is ready;
+      $( document ).ready(function() {
+
+        // cached dom UI elements;
+        var $search_bar_input = $(".search-bar input[type='text']");
+        var $dropdown = $('.dropdown-menu');
+        var $place_details = $('.place-details');
+        var $place_address_wrap = $('.place-address-wrap');
+        var $place_details_name = $('.place-details h4');
+        var $formatted_address = $('.formatted-address');
+        var $directions_container = $('.directions-container');
+        var $stats_container = $('.stats-container');
+        var $circle_container = $('.circle-container');
+
+        // identifiers;
+        var hasStartedSearchingForDirections = false;
+
+        $(".search-bar input[type='text']").val('').focus();
+
+        // search button is clicked for the first time;
+        $('.input-group-btn').on('click', function () {
+          
+          // (1) get the searched text
+          var search_string = $("input[type='text']").val();
+
+          // search bar must not be empty
+          if (search_string.trim().length > 0) {
+            // (1) open up dropdown to show the spinner
+            $dropdown.hide().html(dropdown_loader).show();           
+
+            performSearch(search_string);  
+          }
+          
+        });
+
+        // a search item is clicked
+        $('.dropdown-menu').on('click', 'a', function () {
+          var place = current_search_results[$(this).data('index')];
+          var request = {
+            placeId: place.place_id
+          };
+
+          // (1) remove all the current shown markers;
+          clearMarkers();
+
+          // (2) hide the search results;
+          $dropdown.hide();
+
+          // (3) 
+          if (hasStartedSearchingForDirections) {
+            // get the location latlng;
+            service.getDetails(request, function(result, status) {
+              $('.direction-starting').val(result.formatted_address);
+              starting_place_object = result;
+              $('.calculate-route').prop('disabled', false);
+            });
+
+            map.setCenter(place.geometry.location);
+
+            setMarkerWithPlaceObject(place);
+
+            hasStartedSearchingForDirections = false;
+          } else {
+            // (3) add a new mark based on the selected searched item;
+            map.setCenter(place.geometry.location);
+
+            setTimeout(function() {
+              setMarkerWithPlaceObject(place);
+
+              service.getDetails(request, function(result, status) {
+                var formatted_address =  buildFormattedAddressHtml(result.formatted_address);
+                $place_details_name.html(result.name);
+                $formatted_address.html(formatted_address);
+                $place_details.show();
+                destination_place_object = result;
+              });
+            }, 500);
+          }
+        });        
+
+        // user clicks on the directions link;
+        $('.directions').on('click', function () {
+
+          $directions_container.show();
+
+          // (1) populate destination point
+          $('.direction-destination').val(destination_place_object.formatted_address);
+
+          // (2) close the place details box
+          $place_details.hide();
+
+          // (3) reset search bar for starting point;
+          $search_bar_input.val('').attr('placeholder', 'Search for the starting point...').focus();
+
+          // (4) set the identifier to let us know that the user has started searching for directions
+          hasStartedSearchingForDirections = true;
+        });
+
+        // to do
+        $('.calculate-route').on('click', function () {
+
+          directionsDisplay.setMap(map);
+
+          var request = {
+              origin:starting_place_object.geometry.location,
+              destination:destination_place_object.geometry.location,
+              travelMode: google.maps.TravelMode.DRIVING
+          };
+
+          directionsService.route(request, function(response, status) {
+            if (status == google.maps.DirectionsStatus.OK) {
+              directionsDisplay.setDirections(response);
+
+              resetUI();
+            }
+          });
+        });
+
+        $('.cancel-search').on('click', resetUI);
+
+        $('.reset-map').on('click', function () {
+          directionsDisplay.setMap(null);
+          addMarkersOfRestaurantsOnTheMap();
+          map.setCenter(new google.maps.LatLng(10.3139237, 123.8905048));
+          map.setZoom(14);
+          // directionsDisplay.setMap(map);
+
+          resetUI();
+        });
+
+        $('.draw-circle').on('click', function () {
+          drawCircles();
+          circleBoundChanged();
+        });
+
+        $('.close-stats-container').on('click', function () {
+          $stats_container.hide();
+        });
+
+        $('.close-directions-container').on('click', function () {
+          $directions_container.hide();
+        });
+
+        $('.close-circle-container').on('click', function () {
+          $circle_container.hide();
+          circle.setVisible(false);
+        });
+
+        console.log( rTypes );
+
+        $('.panel-resto input[type="checkbox"]').on('change', function () {
+          // console.log( $(this).prop('checked') );
+          // console.log( $(this).val() );
+          // console.log( rTypes.indexOf( parseInt($(this).val())) );
+
+          var value = parseInt($(this).val());
+          var index = rTypes.indexOf( value );
+
+          // console.log(index);
+
+          if ( !$(this).prop('checked') ) {
+            if ( rTypes.indexOf( value ) >= 0 ) {
+              rTypes.splice(index, 1);
+            }
+          } else {
+            if ( rTypes.indexOf( value ) == -1 ) {
+              rTypes.push(value);
+            }
+          }
+
+          // console.log( rTypes );
+
+          clearMarkers();
+          directionsDisplay.setMap(null);          
+          addMarkersOfRestaurantsOnTheMap();
+          map.setCenter(new google.maps.LatLng(10.3139237, 123.8905048));
+          map.setZoom(14);
+          resetUI();
+        });
+
+      });
+
     </script>
   </head>
   <body>
-<div id="map-canvas"></div>
+    <div class="panel">
+
+      <div class="search-bar">
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Search for a restaurant nearby..." autofocus>
+          <span class="input-group-btn">
+            <button class="btn btn-primary" type="button">
+              <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+            </button>
+          </span>
+        </div>
+
+        <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1"></ul>
+
+        <button class="btn btn-primary reset-map" type="button">Reset Map</button>
+
+        <button class="btn btn-primary draw-circle" type="button">Draw Circle</button>
+      </div>
+
+      <!-- <div class="alert alert-info alert-dismissible fade in" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h6>Note:</h6> The search results are automatically filtered from the 50 restaurants plotted on the map. For example, if you
+        search for 'SM Cebu', only 
+      </div> -->
+
+      <div class="place-details clearfix">
+        <button type="button" class="close close-place-details" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+
+        <section class="place-address-wrap pull-left">
+          <h4></h4>
+          <div class="formatted-address"></div>
+        </section>
+
+        <section class="pull-left right-pane">          
+          <a href="javascript:void(0)" class="directions">
+            <span class="glyphicon glyphicon-flag" aria-hidden="true"></span> Directions
+          </a>
+        </section>
+        
+      </div>
+
+      <div class="directions-container">
+        <div class="form-group has-feedback">
+          <label class="control-label" for="inputSuccess2">Starting Address</label>
+          <input type="text" class="form-control direction-starting" aria-describedby="inputSuccess2Status" readonly>
+          <span class="glyphicon glyphicon-map-marker form-control-feedback" aria-hidden="true"></span>
+        </div>
+
+        <div class="form-group has-feedback">
+          <label class="control-label" for="inputSuccess2">Destination Address</label>
+          <input type="text" class="form-control direction-destination" aria-describedby="inputSuccess2Status" readonly>
+          <span class="glyphicon glyphicon-flag form-control-feedback" aria-hidden="true"></span>
+        </div>
+
+        <button class="btn btn-default btn-sm cancel-search">Cancel</button>
+        <button class="btn btn-primary btn-sm calculate-route" disabled="disabled">Show Me Direction</button>        
+      </div>      
+
+      <div class="stats-container clearfix">
+        <button type="button" class="close close-stats-container" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+
+        <div class="pull-left">
+          <section class="avg-earnings">
+            <span>Avg. Earnings per Day</span>
+            <h3></h3>
+          </section>
+
+          <section class="avg-patrons">
+            <span>Avg. Patrons per Day</span>
+            <h3></h3>
+          </section>
+        </div>
+
+        <div class="pull-right">
+          <section class="jobs-patrons">
+            <span>Top 5 Patron Jobs</span>
+            <ul></ul>
+          </section>
+        </div>
+      </div>
+
+      <div class="circle-container">
+        <button type="button" class="close close-circle-container" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+
+        <div class="">
+          <section class="num-restaurants">
+            <span>Number of Restaurants w/in Circle</span>
+            <h3></h3>
+          </section>
+
+          <section class="revenue-total">
+            <span>Total Revenue of Restaurants w/in Cirle</span>
+            <h3></h3>
+          </section>
+        </div>
+      </div>
+
+      <div class="panel-resto">
+        
+        <ul class="list-group">
+          <li class="list-group-item active">
+            <h6>Types of Restaurants</h6>    
+          </li>
+          <li class="list-group-item">
+            <span class="badge">10</span>
+            <div class="checkbox">
+              <label><input type="checkbox" value='1' checked> Pizza House</label>
+            </div>
+          </li>
+          <li class="list-group-item">
+            <span class="badge">10</span>
+            <div class="checkbox">
+              <label><input type="checkbox" value='2' checked> Fast Food</label>
+            </div>
+          </li>
+          <li class="list-group-item">
+            <span class="badge">10</span>
+            <div class="checkbox">
+              <label><input type="checkbox" value='3' checked> Grilled Food</label>
+            </div>
+          </li>
+          <li class="list-group-item">
+            <span class="badge">10</span>
+            <div class="checkbox">
+              <label><input type="checkbox" value='4' checked> Sea Food</label>
+            </div>
+          </li>
+          <li class="list-group-item">
+            <span class="badge">10</span>
+            <div class="checkbox">
+              <label><input type="checkbox" value='5' checked> Italian</label>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div id="map-canvas"></div>    
   </body>
 </html>
