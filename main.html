@@ -1,64 +1,14 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <!--
-    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
-    <script type="text/javascript" src="//code.jquery.com/jquery-2.1.3.min.js"></script>
-    <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>-->
-
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="styles.css">
+
     <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
     <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
-
-    <style type="text/css">
-      html, body, #map-canvas {height: 100%; margin: 0; padding: 0; font-weight: 300;}
-      select {width:100%;}
-      input[type="text"] {background-color:white;}
-      .panel {position:absolute;z-index:1;top:20px;left:100px;width:400px;/*height:300px;*/font-family:"Roboto";background-color:transparent;}
-      .panel-resto {margin-top:5px;}
-      .panel-resto h6 {margin:0 !important;}
-      .search-bar {position:relative;}
-      .dropdown-menu {width:100%;}
-      .dropdown-menu a h6 {margin-bottom:0;font-size:1.1em;}
-      .dropdown-menu a span {color:#AAA;font-weight:300;font-size:12px;}
-      h4 {font-weight:normal;}
-      label {font-size:12px;}
-      .text-center {text-align:center;}
-      .reset-map {position:absolute;top:0;right:-100px;}
-      .draw-circle {position:absolute;top:0;right:-205px;}
-      .place-address-wrap {width:260px;}
-      .place-details {background-color:white;padding:10px;margin:5px 0 0;display:none;border:1px dotted #AAA;}
-      .place-details .formatted-address span {display:block;}
-      .right-pane {margin-top:10px;}
-      .small-text {font-size:10px;}
-      .directions-container {background:white;padding:10px;margin-top:5px;display:none;}
-      .cards-vertical-divider {
-        background: linear-gradient(top,#fbfbfb,#e2e2e2,#fbfbfb);
-        background: -o-linear-gradient(top,#fbfbfb,#e2e2e2,#fbfbfb);
-        background: -ms-linear-gradient(top,#fbfbfb,#e2e2e2,#fbfbfb);
-        background: -moz-linear-gradient(top,#fbfbfb,#e2e2e2,#fbfbfb);
-        background: -webkit-linear-gradient(top,#FBFBFB,#E2E2E2,#FBFBFB);
-        width: 1px;
-        min-width: 1px;
-        display: table-cell;
-        vertical-align: top;
-        height: 43px;
-      }
-      .stats-container {/*position:absolute;*/margin-top:5px;background-color:white;padding:10px;width:400px;font-family:"Roboto";border:1px dotted #AAA;font-size:12px;display:none;}
-      .stats-container h3, .circle-container h3 {font-weight:300;font-family:"Roboto";font-weight:300px;margin-top:0px;font-size:30px;}
-      .stats-container > div:first-child {width:200px;}
-      .stats-container > div:last-child {width:150px;}
-      .stats-container ul {list-style:none;padding:0;list-style-position:inside;list-style-type:decimal;margin-top:10px;}
-      .circle-container {/*position:absolute;*/margin-top:5px;background-color:white;padding:10px;width:400px;font-family:"Roboto";border:1px dotted #AAA;font-size:12px;display:none;}
-      .alert-dismissible {margin-top:5px;}
-      .checkbox {margin:0 !important;}
-      .badge {font-weight:normal !important;}
-    </style>
     <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDiDO7ZZzrtmb5d4xDByyo4I5hvesQG8CY&libraries=places"></script>
     <script type="text/javascript" src="places.js"></script>
     <script type="text/javascript">
-      console.log(restaurant_list.length);
-
       var map;
       var service;
       var circle;
@@ -97,7 +47,6 @@
 
       function addMarkersOfRestaurantsOnTheMap() {
         for (var i = 0; i < restaurant_list.length; i++) {
-          // console.log(rTypes);
           if ( rTypes.indexOf( restaurant_list[i].type ) >= 0 ) {
             setMarkerWithPlaceObjectAtIndex(restaurant_list[i], i);
           }
@@ -116,16 +65,8 @@
         });
       }
 
-      // @depreciated
-      function getPlaceDetailsWithPlaceId(request) {
-        service.getDetails(request, function(result, status) {
-          // console.log(result);
-        });
-      }
-
       // @NOTE needs refactoring
       function setMarkerWithPlaceObjectAtIndex(place, index) {
-        // console.log(place);
         var marker = new google.maps.Marker({
           position: place.location,
           map: map,
@@ -142,9 +83,6 @@
         google.maps.event.addListener(marker, 'click', function() {
           map.setZoom(18);
           map.setCenter(marker.getPosition());
-          // console.log(json.items[index]);
-
-          console.log( restaurant_list[index] );
 
           var patron_jobs_html = '';
 
@@ -206,8 +144,6 @@
         } else {
           $('.dropdown-menu').html(dropdown_zero_results).show();          
         }
-
-        // console.log(status);
       }
 
       function buildSearchResultList(results) {
@@ -216,8 +152,6 @@
 
         // empty the current_search_results array first;
         current_search_results = [];
-
-        console.log(results);
 
         for (var i = 0; i < results.length; i++) {
           if ((i + 1) > MAX_SEARCH_RESULT_DISPLAY) { break; }
@@ -514,14 +448,8 @@
         console.log( rTypes );
 
         $('.panel-resto input[type="checkbox"]').on('change', function () {
-          // console.log( $(this).prop('checked') );
-          // console.log( $(this).val() );
-          // console.log( rTypes.indexOf( parseInt($(this).val())) );
-
           var value = parseInt($(this).val());
           var index = rTypes.indexOf( value );
-
-          // console.log(index);
 
           if ( !$(this).prop('checked') ) {
             if ( rTypes.indexOf( value ) >= 0 ) {
@@ -532,8 +460,6 @@
               rTypes.push(value);
             }
           }
-
-          // console.log( rTypes );
 
           clearMarkers();
           directionsDisplay.setMap(null);          
